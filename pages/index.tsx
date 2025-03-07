@@ -1,7 +1,14 @@
 import React from 'react';
 import Head from 'next/head';
 import EmailGenerator from '../components/EmailGenerator';
-import { defaultMjmlCode } from '../utils/mjmlUtils';
+import { defaultMjmlCode } from '~/utils/mjmlConstants';
+import dynamic from 'next/dynamic';
+import Editor from '~/components/Editor';
+
+// Client-side only olarak EditorBlock komponentini yükle
+const ClientSideEditorBlock = dynamic(() => Promise.resolve(Editor), {
+  ssr: false
+});
 
 export default function Home() {
   return (
@@ -13,6 +20,9 @@ export default function Home() {
       </Head>
 
       <EmailGenerator defaultMjmlCode={defaultMjmlCode} />
+
+      {/* EditorJS için ekstra div */}
+      <ClientSideEditorBlock />
     </div>
   );
 }

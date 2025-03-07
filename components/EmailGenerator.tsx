@@ -2,7 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { EmailGeneratorProps, StreamResponse } from '../types';
 import { useMjmlConverter } from '../hooks/useMjmlConverter';
 import { convertFileToBase64 } from '../utils/imageUtils';
-import { constructFullMjml, addIdsToMjmlElements } from '../utils/mjmlUtils';
+import {
+  constructFullMjml,
+  createMjmlWithDataAttributes
+} from '../utils/mjmlUtils';
 
 import ImageUploader from './ImageUploader';
 import MjmlEditor from './MjmlEditor';
@@ -224,69 +227,17 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ defaultMjmlCode }) => {
       }
 
       // Stream is complete - now process the entire content
-      console.log('Stream complete, adding attributes to elements');
+      console.log('Stream complete, adding direct data-id attributes to elements');
 
-      // Add IDs to all MJML elements first
-      const contentWithIds = addIdsToMjmlElements(contentPart);
+      // Create the complete MJML with direct data-id attributes
+      const finalMjml = createMjmlWithDataAttributes(contentPart);
 
-      // Extract all element IDs
-      const idRegex = /id="([^"]+)"/g;
-      const elementIds: string[] = [];
-      let match;
-      const contentCopy = contentWithIds;
-
-      while ((match = idRegex.exec(contentCopy)) !== null) {
-        elementIds.push(match[1]);
-      }
-
-      console.log(`Found ${elementIds.length} elements to add attributes to`);
-
-      // Construct the complete MJML with HTML attributes for each element
-      let completeTemplate = `<mjml>
-  <mj-head>
-    <mj-title>E-posta Şablonu</mj-title>
-    <mj-preview>E-posta önizlemesi</mj-preview>
-    <mj-attributes>
-      <mj-all padding="0px" />
-      <mj-text font-family="Arial, sans-serif" />
-      <mj-section padding="10px 0" />
-      <mj-column padding="10px" />
-    </mj-attributes>
-    <mj-html-attributes>`;
-
-      // Add selectors for each element
-      elementIds.forEach(id => {
-        completeTemplate += `
-      <mj-selector path="#${id}">
-        <mj-html-attribute name="data-element">${id}</mj-html-attribute>
-        <mj-html-attribute name="data-session">${sessionId || 'new-session'}</mj-html-attribute>
-        <mj-html-attribute name="data-timestamp">${new Date().toISOString()}</mj-html-attribute>
-      </mj-selector>`;
-      });
-
-      completeTemplate += `
-    </mj-html-attributes>
-    <mj-style>
-      .email-content { width: 100%; }
-      .text-center { text-align: center; }
-      .text-highlight { color: #1E88E5; }
-    </mj-style>
-  </mj-head>
-  <mj-body>
-    <mj-section>
-      <mj-column>
-      ${contentWithIds}
-      </mj-column>
-    </mj-section>
-  </mj-body>
-</mjml>`;
-
-      // Update the MJML code with HTML attributes
-      setMjmlCode(completeTemplate);
+      // Update the MJML code with data attributes
+      setMjmlCode(finalMjml);
 
       // Update the preview with the final HTML
       if (isReady) {
-        const result = convertToHtml(completeTemplate);
+        const result = convertToHtml(finalMjml);
         setHtmlOutput(result.html);
       }
 
